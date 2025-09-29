@@ -1,4 +1,5 @@
 from local_evaluation import plot_vectors, observer_relation_globally, observer_relation_locally
+import matplotlib.pyplot as plt
 import numpy as np
 
 def compute_electrical_and_magnetic_field(
@@ -18,14 +19,13 @@ def compute_electrical_and_magnetic_field(
         s_x, s_y, s_z = s_hat[i]
         theta = np.arccos(cos_theta_array[i])
         phi = np.arctan2(s_y, s_x)
-
         # --- Spherical field components ---
-        E_r = n * (I0 * h_array[i] * cos_theta_array[i]) / (2 * np.pi * r_array[i]**2) * (1 + 1/(1j * k * r_array[i])) * np.exp(-1j * k * r_array[i])
-        E_theta = 1j * n * (k * I0 * h_array[i] * sin_theta_array[i]) / (4 * np.pi * r_array[i]) * (1 + 1/(1j * k * r_array[i]) - 1/(k * r_array[i])**2) * np.exp(-1j * k * r_array[i])
+        E_r = n * (I0[i] * h_array[i] * cos_theta_array[i]) / (2 * np.pi * r_array[i]**2) * (1 + 1/(1j * k * r_array[i])) * np.exp(-1j * k * r_array[i])
+        E_theta = 1j * n * (k * I0[i] * h_array[i] * sin_theta_array[i]) / (4 * np.pi * r_array[i]) * (1 + 1/(1j * k * r_array[i]) - 1/(k * r_array[i])**2) * np.exp(-1j * k * r_array[i])
         E_phi = 0
         H_r = 0
         H_theta = 0
-        H_phi = 1j * (k * I0 * h_array[i] * sin_theta_array[i]) / (4 * np.pi * r_array[i]) * (1 + 1/(1j * k * r_array[i])) * np.exp(-1j * k * r_array[i])
+        H_phi = 1j * (k * I0[i] * h_array[i] * sin_theta_array[i]) / (4 * np.pi * r_array[i]) * (1 + 1/(1j * k * r_array[i])) * np.exp(-1j * k * r_array[i])
 
         # --- Conversion to Cartesian ---
         conv_matrix = np.array([
@@ -35,10 +35,10 @@ def compute_electrical_and_magnetic_field(
         ], dtype=complex)
 
         E_cart_local = conv_matrix @ np.array([E_r, E_theta, E_phi])
-        H_cart_local = conv_matrix @ np.array([E_r, E_theta, E_phi])
+        H_cart_local = conv_matrix @ np.array([H_r, H_theta, H_phi])
 
         E_spherical_local = np.array([E_r, E_theta, E_phi])
-        H_spherical_local = np.array([E_r, E_theta, E_phi])
+        H_spherical_local = np.array([H_r, H_theta, H_phi])
 
         E_cart_global = E_cart_local[0]*r_hat[i] + E_cart_local[1]*theta_hat[i] + E_cart_local[2]*phi_hat[i]
         H_cart_global = H_cart_local[0]*r_hat[i] + H_cart_local[1]*theta_hat[i] + H_cart_local[2]*phi_hat[i]
@@ -111,3 +111,25 @@ def compute_fields_for_points(observer_points, points_3d, eta, k, I0):
 
 
 
+def create_uniform_sphere(obs_distance, num_points, plot=True):
+    indices = np.arange(0, num_points, dtype=float) + 0.5
+    phi = 2 * np.pi * indices / ((1 + np.sqrt(5)) / 2)
+    theta = np.arccos(1 - 2*indices/num_points)
+
+    X = obs_distance * np.sin(theta) * np.cos(phi)
+    Y = obs_distance * np.sin(theta) * np.sin(phi)
+    Z = obs_distance * np.cos(theta)
+    if plot:
+        ### Print spherical surface points
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.scatter(X, Y, Z)
+
+        ax.set_xlabel('X Label')
+        ax.set_ylabel('Y Label')
+        ax.set_zlabel('Z Label')
+
+        plt.show()
+        return np.stack([X, Y, Z], axis=1)
+    else:
+        return np.stack([X, Y, Z], axis=1)
