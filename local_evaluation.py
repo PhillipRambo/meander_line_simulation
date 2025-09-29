@@ -10,6 +10,7 @@ def observer_relation_locally(observation_point, source_points, plot=True):
     R_array = []
     h_list = []
     h_hat_array = []
+    observation_point = np.asarray(observation_point).reshape(-1)
     
     center_points = (source_points[:-1] + source_points[1:]) / 2  # centering the observation point
     for i in range(len(center_points)):
