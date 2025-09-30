@@ -89,52 +89,48 @@ s = 0.33 * lambda_g
 L = 0.7 * lambda_g
 w = 0.06 * lambda_g
 wire_height = 3.2e-3
-num_points = 200
+num_points = 100
 Freq_of_interest = 1060e6 #1060MHz
 wavelength = 3.0 * 10**8 / Freq_of_interest
 eta = 377 #Ohms.. intrinsic impedance, not sure of this
 k = 2 * np.pi / lambda_g
 
-obs_point = np.array([[3, 3, 3]])
-obs_points = create_uniform_sphere(obs_distance=wavelength*10, num_points=1000, plot=False)
+obs_point = np.array([[0.1, 0.1, 0.1]])
+obs_points = create_uniform_sphere(obs_distance=wavelength*10, num_points=500, plot=False)
 points = generate_meander_antenna(lambda_g, d, s, L, w, N=4, num_points=num_points, plot=False) 
 points_3d = generate_3d_structure(points_2D=points, wire_height=wire_height, plot=False) 
 s_array, s_hat_array, r_array, h_list, h_hat_array, center_points = observer_relation_locally(obs_point, points_3d, plot=False)
-_, I0 = current_distribution(h_list, wavelength, amplitude=1.0, plot=True)
-I_seg = segment_integrals(h_list, wavelength, amplitude=1.0, L=None, plot=True)
+_, I0 = current_distribution(h_list, wavelength, amplitude=1.0, plot=False)
+I_seg = segment_integrals(h_list, lambda_g, amplitude=1.0, L=None, plot=False)
+I = 1
 
+E_total_array, H_total_array = compute_fields_for_points(obs_points, points_3d, eta, k, I_seg)
 
-
-E_total_array, H_total_array, E_total_mag, H_total_mag = compute_fields_for_points(obs_points, points_3d, eta, k, I_seg/h_list)
-
-
-plot_magnitude_radiation(obs_points, np.linalg.norm(E_total_array, axis=1), dB=False, label='E')
-
-
-'''
-print(np.linalg.norm(E_total_array, axis=1))
-
-print(obs_points)
-
+plot_magnitude_radiation(obs_points, np.linalg.norm(E_total_array, axis=1), dB=True, label='E')
 
 
 
 E_total_spherical, theta, phi = convert_cartesian_to_spherical(E_total_array, obs_points)
 H_total_spherical, dummy1, dummy2 = convert_cartesian_to_spherical(H_total_array, obs_points)
-print(theta)
+print(E_total_spherical)
+
+theta_E, phi_E = half_power_beam_width(np.linalg.norm(E_total_array, axis=1), obs_points)
+theta_H, phi_H = half_power_beam_width(np.linalg.norm(H_total_array, axis=1), obs_points)
+
+half_power_beamwidth_product = (180-theta_E*2) * (180-theta_H*2) 
+print(f'theta_E: {180-theta_E*2}')
+print(f'theta_H: {180-theta_H*2}')
+print(f'half power beamwidth product: {half_power_beamwidth_product}')
+
+G = 32400 / half_power_beamwidth_product
+D = 41253 / half_power_beamwidth_product
+
+print(f'G = {G}')
+print(f'D = {D}')
+#print(G)
+#print(D)
+
 
 D0 = calculate_directivity(E_total_spherical, H_total_spherical, theta, phi)
+print(f'D0:{D0}')
 
-
-#theta_E, phi_E = half_power_beam_width(E_total_mag, obs_points)
-
-
-theta_H, phi_H = half_power_beam_width(H_total_mag, obs_points)
-
-
-G = 32400 / (theta_E * theta_H)
-D = 41253 / (theta_E * theta_H)
-print(G)
-print(D)
-
-'''

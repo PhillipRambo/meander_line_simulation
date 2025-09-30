@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from segmentation import generate_meander_antenna, generate_3d_structure
 import numpy as np
+import time
 
 def observer_relation_locally(observation_point, source_points, plot=True):
     s_array = []
@@ -35,7 +36,6 @@ def observer_relation_locally(observation_point, source_points, plot=True):
         s_hat_array.append(s_hat)
         R_array.append(R)
     if plot:
-        
         fig = plt.figure(figsize=(10, 8))
         ax = fig.add_subplot(111, projection='3d')
 
@@ -43,19 +43,33 @@ def observer_relation_locally(observation_point, source_points, plot=True):
         ax.plot(points_3d_arr[:,0], points_3d_arr[:,1], points_3d_arr[:,2], 'bo-', label='Antenna dots')
         ax.scatter(observation_point[0], observation_point[1], observation_point[2], c='r', s=20, label='Observer')
 
-        # Plot vectors from each dot to observer
+        # Plot vectors from each segment center to observer (s)
         for s_vec, point in zip(s_array, center_points):
             ax.plot([point[0], point[0]+s_vec[0]],
                     [point[1], point[1]+s_vec[1]],
-                    [point[2], point[2]+s_vec[2]], 'g-', alpha=0.5)
-            
+                    [point[2], point[2]+s_vec[2]], 'g-', alpha=0.5, label='s_vec')
+
+        # Plot segment direction vectors h_hat
+        h_scale = 0.1  # scale for visibility
+        for h_hat_vec, point in zip(h_hat_array, center_points):
+            ax.quiver(point[0], point[1], point[2],
+                    h_hat_vec[0], h_hat_vec[1], h_hat_vec[2],
+                    color='b', length=h_scale, normalize=True, label='h_hat')
+
+        # Plot s_hat vectors (unit vector towards observer)
+        s_scale = 0.1
+        for s_hat_vec, point in zip(s_hat_array, center_points):
+            ax.quiver(point[0], point[1], point[2],
+                    s_hat_vec[0], s_hat_vec[1], s_hat_vec[2],
+                    color='r', length=s_scale, normalize=True, label='s_hat')
+
         ax.set_xlabel('X (m)')
         ax.set_ylabel('Y (m)')
         ax.set_zlabel('Z (m)')
-        ax.set_title('Antenna points and vectors to observer')
+        ax.set_title('Antenna points, segment directions, and observer vectors')
         ax.legend()
         ax.grid(True)
-        plt.show()   
+        plt.show()
         return s_array, s_hat_array, R_array, h_list, h_hat_array, center_points
     else:
         return s_array, s_hat_array, R_array, h_list, h_hat_array, center_points
@@ -101,27 +115,40 @@ def plot_vectors(points_3d, h_hat_array, lengths, N=1):
 
 
 
-def observer_relation_globally(s_hat, h_hat):
-    s_hat = np.asarray(s_hat)
-    h_hat = np.asarray(h_hat)
+def observer_relation_globally(s_hats, h_hats):
+    s_hats = np.array(s_hats)
+    h_hats = np.array(h_hats)
+    
+    N = s_hats.shape[0]
+    
+    phi_hats = np.zeros_like(s_hats)
+    r_hats = np.zeros_like(s_hats)
+    theta_hats = np.zeros_like(s_hats)
+    sin_thetas = np.zeros(N)
+    cos_thetas = np.zeros(N)
+    
+    for i in range(N):
+        s_hat = s_hats[i]
+        h_hat = h_hats[i]
+        
+        cross_h_s = np.cross(h_hat, s_hat)
+        phi_hat = cross_h_s / np.linalg.norm(cross_h_s)
+        r_hat = s_hat
+        theta_hat = np.cross(phi_hat, s_hat) / np.linalg.norm(np.cross(phi_hat, s_hat))
+        
+        sin_theta = np.linalg.norm(np.cross(s_hat, h_hat))
+        cos_theta = np.dot(s_hat, h_hat)
+        
+        phi_hats[i] = phi_hat
+        r_hats[i] = r_hat
+        theta_hats[i] = theta_hat
+        sin_thetas[i] = sin_theta
+        cos_thetas[i] = cos_theta
+    return phi_hats, r_hats, theta_hats, sin_thetas, cos_thetas
 
-    phi_hat = np.cross(h_hat, s_hat) / np.linalg.norm(np.cross(h_hat, s_hat))
-    r_hat = s_hat
 
-    theta_hat = np.cross(phi_hat, s_hat)/(np.linalg.norm(np.cross(phi_hat, s_hat)))
-
-    sin_theta = np.linalg.norm(np.cross(s_hat, h_hat), axis=1)
-    cos_theta = np.einsum('ij,ij->i', s_hat, h_hat)
-
-    return phi_hat, r_hat, theta_hat, sin_theta, cos_theta
-
-
-
-import numpy as np
-import matplotlib.pyplot as plt
 
 def current_distribution(h_list, wavelength, amplitude=1.0, plot=False):
-    # Segment boundaries
     boundaries = np.cumsum(h_list)
     positions = np.insert(boundaries, 0, 0)
     center_points = (positions[:-1] + positions[1:]) / 2  
@@ -151,8 +178,6 @@ def current_distribution(h_list, wavelength, amplitude=1.0, plot=False):
     return center_points, currents
 
 
-import numpy as np
-import matplotlib.pyplot as plt
 
 def segment_integrals(h_array, wavelength, amplitude=1.0, L=None, plot=False):
     """

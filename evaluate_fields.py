@@ -9,15 +9,14 @@ def compute_electrical_and_magnetic_field(
     E_cartesian_array = []
     H_cartesian_array = []
 
-
     for i in range(N):
         # --- Spherical field components ---
-        E_r = n * (I0[i] * h_array[i] * cos_theta_array[i]) / (2 * np.pi * r_array[i]**2) * (1 + 1/(1j * k * r_array[i])) * np.exp(-1j * k * r_array[i])
-        E_theta = 1j * n * (k * I0[i] * h_array[i] * sin_theta_array[i]) / (4 * np.pi * r_array[i]) * (1 + 1/(1j * k * r_array[i]) - 1/(k * r_array[i])**2) * np.exp(-1j * k * r_array[i])
+        E_r = n * (I0[i] * cos_theta_array[i]) / (2 * np.pi * r_array[i]**2) * (1 + 1/(1j * k * r_array[i])) * np.exp(-1j * k * r_array[i])
+        E_theta = 1j * n * (k * I0[i] * sin_theta_array[i]) / (4 * np.pi * r_array[i]) * (1 + 1/(1j * k * r_array[i]) - 1/(k * r_array[i])**2) * np.exp(-1j * k * r_array[i])
         E_phi = 0
         H_r = 0
         H_theta = 0
-        H_phi = 1j * (k * I0[i] * h_array[i]  * sin_theta_array[i]) / (4 * np.pi * r_array[i]) * (1 + 1/(1j * k * r_array[i])) * np.exp(-1j * k * r_array[i])
+        H_phi = 1j * (k * I0[i] * sin_theta_array[i]) / (4 * np.pi * r_array[i]) * (1 + 1/(1j * k * r_array[i])) * np.exp(-1j * k * r_array[i])
 
         # --- making a 3D vector for the E and H field
         E_spherical_local = np.array([E_r, E_theta, E_phi])
@@ -30,8 +29,6 @@ def compute_electrical_and_magnetic_field(
         E_cartesian_array.append(E_cartesian_global)
         H_cartesian_array.append(H_cartesian_global)
         
-
-
     E_cartesian_array = np.array(E_cartesian_array)
     H_cartesian_array = np.array(H_cartesian_array)
 
@@ -58,12 +55,9 @@ def compute_fields_for_points(observer_points, points_3d, eta, k, I0):
         fields = compute_electrical_and_magnetic_field(
             eta, k, I0, h_list, r_array, phi_hat, r_hat, theta_hat, sin_theta, cos_theta, s_hat_array, magnitude=True
         )
-    
 
         E_total.append(fields["E_total_cartesian"])
         H_total.append(fields["E_total_cartesian"])
-
-
                               
     E_total_array = np.array(E_total)
     H_total_array = np.array(H_total)
