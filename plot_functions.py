@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from segmentation import generate_meander_antenna, generate_3d_structure
-from local_evaluation import plot_vectors, observer_relation_globally, observer_relation_locally, current_distribution
+from local_evaluation import plot_vectors, observer_relation_globally, observer_relation_locally, current_distribution, segment_integrals
 from evaluate_fields import compute_fields_for_points, create_uniform_sphere, calculate_directivity
 import numpy as np
 from scipy.interpolate import griddata
@@ -33,16 +33,19 @@ def create_uniform_sphere(obs_distance, num_points, plot=True):
 
 
 def plot_magnitude_radiation(observation_points, total_magnitude, dB=True, label=''):
+    # Normalize direction vectors
+    obs_norm = observation_points / np.linalg.norm(observation_points, axis=1)[:, np.newaxis]
+    
+    # Scale by magnitude
+    scaled_points = obs_norm * total_magnitude[:, np.newaxis]
 
-    obs_norm = observation_points / np.linalg.norm(observation_points, axis=1)[:, None]
-    scaled_points = obs_norm * total_magnitude[:, None]
-
+    # Color values
     if dB:
-        E_color = 20 * np.log10(total_magnitude + 1e-20)  # avoid log(0)
+        E_color = 20 * np.log10(total_magnitude)
     else:
         E_color = total_magnitude
 
-    # Plotting
+    # Plot
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
@@ -51,7 +54,6 @@ def plot_magnitude_radiation(observation_points, total_magnitude, dB=True, label
         c=E_color, cmap='turbo'
     )
 
-    # Colorbar and titles
     if dB:
         fig.colorbar(p, label=f'Radiated {label}-Field [dB]')
         ax.set_title(f'Radiated {label}-Field in dB')
@@ -64,9 +66,6 @@ def plot_magnitude_radiation(observation_points, total_magnitude, dB=True, label
     ax.set_zlabel('Z')
 
     plt.show()
-
-    # Return the linear magnitude array
-    return None
 
 def half_power_beam_width(E_magnitude, observation_points):
     E_magnitude_db = 20 * np.log10(E_magnitude)
@@ -84,13 +83,13 @@ def half_power_beam_width(E_magnitude, observation_points):
     
 
 
-lambda_g = 179e-3
+lambda_g = 15.13e-2
 d = 0.16 * lambda_g
-s = 0.42 * lambda_g
+s = 0.33 * lambda_g
 L = 0.7 * lambda_g
-w = 0.05 * lambda_g
+w = 0.06 * lambda_g
 wire_height = 3.2e-3
-num_points = 200
+num_points = 50
 Freq_of_interest = 1060e6 #1060MHz
 wavelength = 3.0 * 10**8 / Freq_of_interest
 eta = 377 #Ohms.. intrinsic impedance, not sure of this
@@ -101,13 +100,25 @@ obs_points = create_uniform_sphere(obs_distance=wavelength*10, num_points=1000, 
 points = generate_meander_antenna(lambda_g, d, s, L, w, N=4, num_points=num_points, plot=False) 
 points_3d = generate_3d_structure(points_2D=points, wire_height=wire_height, plot=False) 
 s_array, s_hat_array, r_array, h_list, h_hat_array, center_points = observer_relation_locally(obs_point, points_3d, plot=False)
-_, I0 = current_distribution(h_list, wavelength, amplitude=1.0, plot=False)
+_, I0 = current_distribution(h_list, wavelength, amplitude=1.0, plot=True)
+I_seg = segment_integrals(h_list, wavelength, amplitude=1.0, L=None, plot=True)
 
 
 
-E_total_array, H_total_array, E_total_mag, H_total_mag = compute_fields_for_points(obs_points, points_3d, eta, k, I0)
+E_total_array, H_total_array, E_total_mag, H_total_mag = compute_fields_for_points(obs_points, points_3d, eta, k, I_seg/h_list)
 
-#plot_magnitude_radiation(obs_points, E_total_mag, dB=False, label='E')
+
+plot_magnitude_radiation(obs_points, np.linalg.norm(E_total_array, axis=1), dB=False, label='E')
+
+
+'''
+print(np.linalg.norm(E_total_array, axis=1))
+
+print(obs_points)
+
+
+
+
 E_total_spherical, theta, phi = convert_cartesian_to_spherical(E_total_array, obs_points)
 H_total_spherical, dummy1, dummy2 = convert_cartesian_to_spherical(H_total_array, obs_points)
 print(theta)
@@ -117,7 +128,7 @@ D0 = calculate_directivity(E_total_spherical, H_total_spherical, theta, phi)
 
 #theta_E, phi_E = half_power_beam_width(E_total_mag, obs_points)
 
-'''
+
 theta_H, phi_H = half_power_beam_width(H_total_mag, obs_points)
 
 

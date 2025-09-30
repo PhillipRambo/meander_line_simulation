@@ -117,30 +117,89 @@ def observer_relation_globally(s_hat, h_hat):
 
 
 
+import numpy as np
+import matplotlib.pyplot as plt
 
 def current_distribution(h_list, wavelength, amplitude=1.0, plot=False):
-
+    # Segment boundaries
     boundaries = np.cumsum(h_list)
     positions = np.insert(boundaries, 0, 0)
     center_points = (positions[:-1] + positions[1:]) / 2  
+    total_length = positions[-1]
 
-    # Current distribution
-    currents = amplitude * np.sin(2 * np.pi * center_points / wavelength)
-    currents = np.flip(currents)
+    # Current distribution: sinusoidal wave with zero at the right end
+    currents = amplitude * np.sin(2 * np.pi * (center_points - total_length) / wavelength)
+
     if plot:
-        x_vals = np.linspace(0, positions[-1], 1000)
-        y_vals = amplitude * np.sin(2 * np.pi * x_vals / wavelength)
-        plt.hlines(0, 0, positions[-1], colors="black", linewidth=2)
+        x_vals = np.linspace(0, total_length, 1000)
+        y_vals = amplitude * np.sin(2 * np.pi * (x_vals - total_length) / wavelength)
+
+        plt.hlines(0, 0, total_length, colors="black", linewidth=2)
 
         for x in positions:
             plt.vlines(x, -0.2, 0.2, colors="red")
 
+        plt.plot(x_vals, y_vals, color="gray", linestyle="--", label="Sinusoidal current")
         plt.scatter(center_points, currents, color="blue", zorder=5, label="Currents at centers")
-
 
         plt.title("Current distribution along antenna")
         plt.xlabel("Length")
+        plt.ylabel("Current amplitude")
         plt.legend()
         plt.show()
 
     return center_points, currents
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def segment_integrals(h_array, wavelength, amplitude=1.0, L=None, plot=False):
+    """
+    h_array:    array of segment lengths (length N)
+    wavelength: scalar
+    amplitude:  amplitude A of I(x) = A * sin(k*(x-L))
+    L:          right-end coordinate. If None, inferred as sum(h_array)
+    plot:       if True, show the continuous current and segment integrals
+    Returns: I_seg (integrated current over each segment, units A·m)
+    """
+    h = np.asarray(h_array)
+    left_edges = np.insert(np.cumsum(h)[:-1], 0, 0)  # left edge of each segment
+    right_edges = left_edges + h
+
+    if L is None:
+        L = np.sum(h)
+
+    k = 2 * np.pi / wavelength
+
+    # analytic segment integrals
+    I_seg = -amplitude / k * (np.cos(k * (right_edges - L)) - np.cos(k * (left_edges - L)))
+
+    # handle extremely large wavelength (k -> 0)
+    if np.isclose(k, 0.0):
+        I_seg = amplitude * 0.5 * (right_edges**2 - left_edges**2 - 2*L*(right_edges - left_edges))
+
+    if plot:
+        x_vals = np.linspace(0, L, 1000)
+        I_vals = amplitude * np.sin(k * (x_vals - L))
+
+        centers = (left_edges + right_edges) / 2
+        I_avg = I_seg / h  # average current per segment
+
+        plt.figure(figsize=(8,4))
+        plt.plot(x_vals, I_vals, "k--", label="Continuous I(x)")
+        plt.hlines(0, 0, L, colors="gray", linewidth=1)
+
+        for i in range(len(h)):
+            plt.bar(centers[i], I_avg[i], width=h[i], alpha=0.4, align="center",
+                    label="Segment avg" if i==0 else "")
+
+        plt.scatter(centers, I_avg, color="red", zorder=5, label="Avg current per segment")
+        plt.xlabel("Position along wire")
+        plt.ylabel("Current (A)")
+        plt.title("Continuous vs. segment-integrated current distribution")
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
+    return I_seg
