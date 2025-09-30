@@ -29,13 +29,12 @@ def convert_cartesian_to_spherical(field_vector, observation_points):
     
     return E_spherical, theta_array, phi_array
 
-
 def calculate_directivity(E_field, H_field, theta, phi):
-    E_theta = E_field[:, 1]
-    E_phi   = E_field[:, 2]
-    H_theta = H_field[:, 1]
-    H_phi   = H_field[:, 2]
-    for i in range(len(E_theta)):
-        S_r = 0.5 * np.real(E_theta[i] * np.conj(H_phi[i]) - E_phi[i] * np.conj(H_theta[i]))
-        print((E_theta[i] * np.conj(H_phi[i]) - E_phi[i] * np.conj(H_theta[i])))
-    return None
+    S = 0.5 * np.real(np.cross(E_field, np.conj(H_field)))
+    S_max = np.linalg.norm(np.max(S))
+    denom = np.sum(S * np.sin(theta)[:, np.newaxis])
+    dtheta = theta[1] - theta[0]
+    dphi   = phi[1] - phi[0]
+    D0 = (8 * np.pi / (np.abs(dphi) * np.abs(dtheta))) * (S_max / denom)
+
+    return D0
