@@ -37,5 +37,5 @@ def calculate_directivity(E_field, H_field, theta, phi):
     H_phi   = H_field[:, 2]
     for i in range(len(E_theta)):
         S_r = 0.5 * np.real(E_theta[i] * np.conj(H_phi[i]) - E_phi[i] * np.conj(H_theta[i]))
-        print(S_r)
+        print((E_theta[i] * np.conj(H_phi[i]) - E_phi[i] * np.conj(H_theta[i])))
     return None

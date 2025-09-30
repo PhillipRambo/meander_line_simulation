@@ -96,7 +96,7 @@ eta = 377 #Ohms.. intrinsic impedance, not sure of this
 k = 2 * np.pi / lambda_g
 
 obs_point = np.array([[0.1, 0.1, 0.1]])
-obs_points = create_uniform_sphere(obs_distance=wavelength*10, num_points=500, plot=False)
+obs_points = create_uniform_sphere(obs_distance=wavelength*10, num_points=1000, plot=False)
 points = generate_meander_antenna(lambda_g, d, s, L, w, N=4, num_points=num_points, plot=False) 
 points_3d = generate_3d_structure(points_2D=points, wire_height=wire_height, plot=False) 
 s_array, s_hat_array, r_array, h_list, h_hat_array, center_points = observer_relation_locally(obs_point, points_3d, plot=False)
@@ -107,6 +107,7 @@ I = 1
 E_total_array, H_total_array = compute_fields_for_points(obs_points, points_3d, eta, k, I_seg)
 
 plot_magnitude_radiation(obs_points, np.linalg.norm(E_total_array, axis=1), dB=True, label='E')
+plot_magnitude_radiation(obs_points, np.linalg.norm(H_total_array, axis=1), dB=True, label='H')
 
 
 

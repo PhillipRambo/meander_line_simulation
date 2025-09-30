@@ -57,7 +57,7 @@ def compute_fields_for_points(observer_points, points_3d, eta, k, I0):
         )
 
         E_total.append(fields["E_total_cartesian"])
-        H_total.append(fields["E_total_cartesian"])
+        H_total.append(fields["H_total_cartesian"])
                               
     E_total_array = np.array(E_total)
     H_total_array = np.array(H_total)
