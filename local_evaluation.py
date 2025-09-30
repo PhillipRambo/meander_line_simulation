@@ -116,33 +116,27 @@ def observer_relation_globally(s_hat, h_hat):
     return phi_hat, r_hat, theta_hat, sin_theta, cos_theta
 
 
+
+
 def current_distribution(h_list, wavelength, amplitude=1.0, plot=False):
 
     boundaries = np.cumsum(h_list)
     positions = np.insert(boundaries, 0, 0)
-
-    # Centers of segments
     center_points = (positions[:-1] + positions[1:]) / 2  
 
     # Current distribution
     currents = amplitude * np.sin(2 * np.pi * center_points / wavelength)
-
+    currents = np.flip(currents)
     if plot:
         x_vals = np.linspace(0, positions[-1], 1000)
         y_vals = amplitude * np.sin(2 * np.pi * x_vals / wavelength)
-
-        # Plot total line
         plt.hlines(0, 0, positions[-1], colors="black", linewidth=2)
 
-        # Plot boundaries
         for x in positions:
             plt.vlines(x, -0.2, 0.2, colors="red")
 
-        # Plot currents at centers
         plt.scatter(center_points, currents, color="blue", zorder=5, label="Currents at centers")
 
-        # Plot sine wave
-        plt.plot(x_vals, y_vals, color="green", label="Sine wave")
 
         plt.title("Current distribution along antenna")
         plt.xlabel("Length")
