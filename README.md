@@ -31,14 +31,15 @@ cd meander_line_simulation
 ```
 2. Install the required packages:
 
+```
 pip install -r requirements.txt
-
+```
 ## Usage
 
 Run the main script:
-
+```
 python main.py
-
+```
 ## Configuration
 
 All constants and parameters are stored in config.py. You can adjust:
@@ -55,3 +56,4 @@ All constants and parameters are stored in config.py. You can adjust:
 - src/plotting.py: Functions for plotting radiation patterns, heatmaps, and 3D visualizations
 - src/segmentation.py: Functions to generate antenna geometries
 - src/local_eval.py: Local evaluation functions for currents, segments, and observer relations
+
