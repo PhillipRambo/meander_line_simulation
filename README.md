@@ -40,6 +40,9 @@ Run the main script:
 ```
 python main.py
 ```
+
+⚠️ **NOTE:** In the `main.py` file, you have flags to select what you want to plot.
+
 ## Configuration
 
 All constants and parameters are stored in config.py. You can adjust:
