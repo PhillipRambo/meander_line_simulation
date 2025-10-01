@@ -26,20 +26,19 @@ meander_line_simulation/
 ```
 git clone https://github.com/PhillipRambo/meander_line_simulation.git
 ```
-
 ```
 cd meander_line_simulation
 ```
 2. Install the required packages:
-```
+
 pip install -r requirements.txt
-```
+
 ## Usage
 
 Run the main script:
-```
+
 python main.py
-```
+
 ## Configuration
 
 All constants and parameters are stored in config.py. You can adjust:
